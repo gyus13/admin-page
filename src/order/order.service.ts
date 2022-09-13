@@ -49,7 +49,7 @@ export class OrderService {
       if (sort == Sort.CREATEDAT) {
         await queryResult.orderBy('order.createAt', 'DESC');
       } else if (sort == Sort.ENDEDAT) {
-        await queryResult.orderBy('order.createAt', 'DESC');
+        await queryResult.orderBy('order.endedAt', 'DESC');
       }
 
       await queryResult
