@@ -15,4 +15,6 @@ export class CouponEntity extends CommonEntity {
   @ApiProperty()
   @Column()
   price: string;
+
+
 }

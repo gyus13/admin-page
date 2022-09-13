@@ -1,7 +1,13 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import {
+  ApiHeader,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { PatchDeliveryRequestDto } from './dto/patch-delivery-request.dto';
-import {OrderService} from "./order.service";
+import { OrderService } from './order.service';
+import { DeliveryStatus, Sort } from '../common/valuable.utils';
 
 @Controller('order')
 export class OrderController {
@@ -9,9 +15,14 @@ export class OrderController {
 
   /**
    * description : 주문 내역 조회 API
-   * @param PostBoardRequestDto
    * @returns non-exist
+   * @param searchingYear
    */
+  @ApiHeader({
+    description: 'jwt token',
+    name: 'x-access-token',
+    example: 'JWT TOKEN',
+  })
   @ApiResponse({
     status: 200,
     description: '성공',
@@ -25,9 +36,18 @@ export class OrderController {
     description: '서버 에러',
   })
   @ApiOperation({ summary: '주문내역 조회 API' })
-  @Get('/:id')
-  GetOrder(@Param('id') id: number) {
-    // return this.orderService.retrieveOrder(id);
+  @ApiQuery({ name: 'sort', enum: Sort, required: false })
+  @ApiQuery({ name: 'status', enum: DeliveryStatus, required: false })
+  @ApiQuery({ name: 'name', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @Get()
+  GetOrder(
+    @Query('sort') sort: string,
+    @Query('name') name: string,
+    @Query('status') status: string,
+    @Query('page') p: number,
+  ) {
+    return this.orderService.retrieveOrders(sort, name, status, p);
   }
 
   /**
