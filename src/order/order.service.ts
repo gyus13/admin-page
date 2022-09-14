@@ -3,8 +3,9 @@ import { DeliveryStatus, PAGE_SIZE, Sort } from 'src/common/valuable.utils';
 import { OrderEntity } from '../entity/order.entity';
 import { UserEntity } from '../entity/user.entity';
 import { DataSource } from 'typeorm';
-import {response} from "../config/response.utils";
-import {makeResponse} from "../config/function.utils";
+import { response } from '../config/response.utils';
+import { makeResponse } from '../config/function.utils';
+import { CouponEntity } from '../entity/coupon.entity';
 
 @Injectable()
 export class OrderService {
@@ -59,9 +60,7 @@ export class OrderService {
           'order.deliveryStatus as deliveryStatus',
           'order.endedAt as endedAt',
         ])
-        .addSelect([
-            'user.name as name'
-        ]);
+        .addSelect(['user.name as name']);
 
       let page = 0;
       // 페이징;
@@ -74,6 +73,122 @@ export class OrderService {
         }
         await queryResult.take(PAGE_SIZE).skip(page);
       }
+
+      // 조회
+      orders = await queryResult.getRawMany();
+
+      const data = {
+        orders: orders,
+      };
+
+      const result = makeResponse(response.SUCCESS, data);
+
+      return result;
+    } catch (error) {
+      console.log(error);
+      return response.ERROR;
+    }
+  }
+
+  async patchDelivery(id) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      // board 수정
+      await queryRunner.manager.update(
+        OrderEntity,
+        { id: id },
+        { deliveryStatus: DeliveryStatus.ONGOING },
+      );
+
+      const data = {
+        message: '배송중으로 변경하였습니다.',
+      };
+
+      const result = makeResponse(response.SUCCESS, data);
+
+      // Commit
+      await queryRunner.commitTransaction();
+
+      return result;
+    } catch (error) {
+      // Rollback
+      await queryRunner.rollbackTransaction();
+      console.log(error);
+      return response.ERROR;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async retrieveCoupons() {
+    try {
+      let orders = [];
+
+      // query 생성
+      const queryResult = this.dataSource.createQueryBuilder(
+        CouponEntity,
+        'coupon',
+      );
+
+      queryResult.leftJoin(UserEntity, 'user', 'user.id = coupon.userId');
+
+      await queryResult
+        .select([
+          'coupon.id as id',
+          'coupon.createAt as createdAt',
+          'coupon.type as type',
+          'coupon.percent as percent',
+          'coupon.price as price',
+        ])
+        .addSelect([
+          'user.name as name',
+          'user.city as city',
+          'user.zip as zip',
+        ]);
+
+      // 조회
+      orders = await queryResult.getRawMany();
+
+      const data = {
+        orders: orders,
+      };
+
+      const result = makeResponse(response.SUCCESS, data);
+
+      return result;
+    } catch (error) {
+      console.log(error);
+      return response.ERROR;
+    }
+  }
+
+  async retrieveCouponPrice() {
+    try {
+      let orders = [];
+
+      // query 생성
+      const queryResult = this.dataSource.createQueryBuilder(
+          CouponEntity,
+          'coupon',
+      );
+
+      queryResult.leftJoin(UserEntity, 'user', 'user.id = coupon.userId');
+
+      await queryResult
+          .select([
+            'coupon.id as id',
+            'coupon.createAt as createdAt',
+            'coupon.type as type',
+            'coupon.percent as percent',
+            'coupon.price as price',
+          ])
+          .addSelect([
+            'user.name as name',
+            'user.city as city',
+            'user.zip as zip',
+          ]);
 
       // 조회
       orders = await queryResult.getRawMany();

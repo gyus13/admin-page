@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiHeader,
   ApiOperation,
@@ -8,6 +16,7 @@ import {
 import { PatchDeliveryRequestDto } from './dto/patch-delivery-request.dto';
 import { OrderService } from './order.service';
 import { DeliveryStatus, Sort } from '../common/valuable.utils';
+import {PostOrderRequestDto} from "./dto/post-order-request.dto";
 
 @Controller('order')
 export class OrderController {
@@ -73,7 +82,7 @@ export class OrderController {
     @Param('id') id: number,
     @Body() patchDeliveryRequest: PatchDeliveryRequestDto,
   ) {
-    // return this.orderService.patchDelivery(id);
+    return this.orderService.patchDelivery(id);
   }
 
   /**
@@ -94,8 +103,54 @@ export class OrderController {
     description: '서버 에러',
   })
   @ApiOperation({ summary: '쿠폰 조회 API' })
-  @Patch('/coupon')
+  @Get('/coupon')
   GetCoupon() {
-    // return this.orderService.retrieveCoupon(id);
+    return this.orderService.retrieveCoupons();
+  }
+
+  /**
+   * description : 쿠폰 조회 API
+   * @param PostBoardRequestDto
+   * @returns non-exist
+   */
+  @ApiResponse({
+    status: 200,
+    description: '성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증되지 않은 권한 입니다.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: '서버 에러',
+  })
+  @ApiOperation({ summary: '쿠폰 적용 가격 조회 API' })
+  @Get('/coupon/:couponId')
+  GetCouponPrice() {
+    return this.orderService.retrieveCouponPrice();
+  }
+
+  /**
+   * description : 주문 처리 API
+   * @param PostBoardRequestDto
+   * @returns non-exist
+   */
+  @ApiResponse({
+    status: 200,
+    description: '성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증되지 않은 권한 입니다.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: '서버 에러',
+  })
+  @ApiOperation({ summary: '주문처리 API' })
+  @Post()
+  PostOrder(@Body() postOrderRequestDto: PostOrderRequestDto) {
+    return this.orderService.postOrder(postOrderRequestDto);
   }
 }
