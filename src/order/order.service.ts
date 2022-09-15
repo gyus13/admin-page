@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { response } from '../config/response.utils';
 import { makeResponse } from '../config/function.utils';
 import { CouponEntity } from '../entity/coupon.entity';
+import {PostOrderRequestDto} from "./dto/post-order-request.dto";
 
 @Injectable()
 export class OrderService {
@@ -122,6 +123,38 @@ export class OrderService {
     }
   }
 
+  async postOrder(postOrderRequestDto: PostOrderRequestDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const order = new OrderEntity();
+      order.userId = postOrderRequestDto.userId;
+      order.price = postOrderRequestDto.price;
+      order.deliveryStatus = DeliveryStatus.BEFORE;
+      order.couponId = postOrderRequestDto.couponId;
+      await queryRunner.manager.save(order);
+
+      const data = {
+        message: '배송중으로 변경하였습니다.',
+      };
+
+      const result = makeResponse(response.SUCCESS, data);
+
+      // Commit
+      await queryRunner.commitTransaction();
+
+      return result;
+    } catch (error) {
+      // Rollback
+      await queryRunner.rollbackTransaction();
+      console.log(error);
+      return response.ERROR;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async retrieveCoupons() {
     try {
       let orders = [];
@@ -170,25 +203,25 @@ export class OrderService {
 
       // query 생성
       const queryResult = this.dataSource.createQueryBuilder(
-          CouponEntity,
-          'coupon',
+        CouponEntity,
+        'coupon',
       );
 
       queryResult.leftJoin(UserEntity, 'user', 'user.id = coupon.userId');
 
       await queryResult
-          .select([
-            'coupon.id as id',
-            'coupon.createAt as createdAt',
-            'coupon.type as type',
-            'coupon.percent as percent',
-            'coupon.price as price',
-          ])
-          .addSelect([
-            'user.name as name',
-            'user.city as city',
-            'user.zip as zip',
-          ]);
+        .select([
+          'coupon.id as id',
+          'coupon.createAt as createdAt',
+          'coupon.type as type',
+          'coupon.percent as percent',
+          'coupon.price as price',
+        ])
+        .addSelect([
+          'user.name as name',
+          'user.city as city',
+          'user.zip as zip',
+        ]);
 
       // 조회
       orders = await queryResult.getRawMany();
